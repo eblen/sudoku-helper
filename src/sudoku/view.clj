@@ -3,6 +3,7 @@
             [sudoku.input  :as i]
             [quil.core :as q]))
 
+(def max-sym-per-square 3)
 (def bg-color      [255 255 255])
 (def grid-color    [  0   0   0])
 (def cursor-color  [240 200 255])
@@ -68,10 +69,19 @@
 
           ; Enter symbol
           (= kevent :enter-symbol)
-            (let [sel-square (:sel-square game)
-                  squares    (:squares game)]
-              (assoc game :squares (assoc squares sel-square kdetails)
-                          :last-kb-click (q/millis)))
+            (let [sel-square  (:sel-square game)
+                  squares     (:squares game)
+                  square-syms (get squares sel-square)]
+              (if (and (> max-sym-per-square (count square-syms))
+                       (not (some #(= % kdetails) square-syms)))
+                (assoc game :squares (assoc squares sel-square (conj square-syms kdetails))
+                            :last-kb-click (q/millis))
+                game))
+
+          ; Delete symbols
+          (= kevent :delete-symbol)
+            (assoc game :squares (assoc (:squares game) (:sel-square game) []))
+            
           :else game)
       :else game)))
 
@@ -95,17 +105,20 @@
     (q/rect xpos ypos p/hsq-size p/vsq-size)
 
     ; Draw symbols
-    (q/text-font (q/create-font "Times-Bold" (/ p/hsq-size 1.3) true))
     (q/text-align :center :center)
     (dorun (for [x (range p/game-size) y (range p/game-size)]
-      ((apply q/fill (get (:square-colors g) (square-idx x y)))
-       (q/with-translation [(+ (hline x) (/ p/hsq-size 2))
-                            (+ (vline y) (/ p/vsq-size 2))]
-         (q/text (str (get (:squares g) (square-idx x y))) 0 0)))))))
+      (let [syms (get (:squares g) (square-idx x y))]
+        (when (< 0 (count syms))
+          ((apply q/fill (get (:square-colors g) (square-idx x y)))
+           (q/with-translation [(+ (hline x) (/ p/hsq-size 2))
+                                (+ (vline y) (/ p/vsq-size 2))]
+             (let [font-size (/ p/hsq-size (count syms))]
+               (q/text-font (q/create-font "Times-Bold" font-size true))
+               (q/text (apply str syms) 0 0))))))))))
 
 (defn setup-game [] {
   :sel-square    0
-  :squares       (vec (repeat (* p/game-size p/game-size) nil))
+  :squares       (vec (repeat (* p/game-size p/game-size) []))
   :square-colors (vec (repeat (* p/game-size p/game-size) def-sym-color))
   :last-kb-click 0})
 

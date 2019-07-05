@@ -27,6 +27,7 @@
       (cond
         (some #(= keyword %) [:up :down :left :right])     [:nav-board keyword]
         (some #(= key %)     (take p/game-size p/symbols)) [:enter-symbol key]
+        (= keyword :space)                                 [:delete-symbol]                       
         :else nil))
      nil))
 
