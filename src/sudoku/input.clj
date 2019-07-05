@@ -2,6 +2,15 @@
   (:require [sudoku.params :as p]
             [quil.core :as q]))
 
+(def keys-to-colors {
+  \d p/def-sym-color ; default color
+  \r [255   0   0]   ; red
+  \g [  0 255   0]   ; green
+  \b [  0   0 255]   ; blue
+  \y [255 255   0]   ; yellow
+  \o [255 128   0]   ; orange
+  \p [255   0 255]}) ; purple
+
 ; Return square at the given board coordinates (nil if none)
 (defn- square-at-pos [x y]
   (let [xtrans (- x p/margin)
@@ -23,11 +32,13 @@
 (defn get-kb-event []
   (if (q/key-pressed?)
     (let [key     (q/raw-key)
-          keyword (q/key-as-keyword)]
+          keyword (q/key-as-keyword)
+          color   (get keys-to-colors key)]
       (cond
-        (some #(= keyword %) [:up :down :left :right])     [:nav-board keyword]
-        (some #(= key %)     (take p/game-size p/symbols)) [:enter-symbol key]
-        (= keyword :space)                                 [:delete-symbol]                       
+        (some #(= keyword %) [:up :down :left :right])     [:nav-board     keyword]
+        (some #(= key %)     (take p/game-size p/symbols)) [:enter-symbol  key]
+        (= keyword :space)                                 [:delete-symbol nil]
+        color                                              [:set-color     color]
         :else nil))
      nil))
 

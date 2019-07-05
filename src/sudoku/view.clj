@@ -7,7 +7,6 @@
 (def bg-color      [255 255 255])
 (def grid-color    [  0   0   0])
 (def cursor-color  [240 200 255])
-(def def-sym-color [  0   0   0])
 
 (defn- set-bold-lines [bold?]
   (if bold? (q/stroke-weight 2)
@@ -74,14 +73,19 @@
                   square-syms (get squares sel-square)]
               (if (and (> max-sym-per-square (count square-syms))
                        (not (some #(= % kdetails) square-syms)))
-                (assoc game :squares (assoc squares sel-square (conj square-syms kdetails))
+                (assoc game :squares       (assoc squares sel-square (conj square-syms kdetails))
+                            :square-colors (assoc (:square-colors game) sel-square (:sym-color game))
                             :last-kb-click (q/millis))
                 game))
 
           ; Delete symbols
           (= kevent :delete-symbol)
             (assoc game :squares (assoc (:squares game) (:sel-square game) []))
-            
+
+          ; Change symbol color
+          (= kevent :set-color)
+            (assoc game :sym-color kdetails)
+
           :else game)
       :else game)))
 
@@ -119,7 +123,8 @@
 (defn setup-game [] {
   :sel-square    0
   :squares       (vec (repeat (* p/game-size p/game-size) []))
-  :square-colors (vec (repeat (* p/game-size p/game-size) def-sym-color))
+  :square-colors (vec (repeat (* p/game-size p/game-size) p/def-sym-color))
+  :sym-color p/def-sym-color
   :last-kb-click 0})
 
 (defn update-game [game]
